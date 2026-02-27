@@ -8,7 +8,7 @@ sqlite3.register_adapter(datetime.datetime, lambda dt: dt.isoformat())
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-SCREEN_TITLE = "Star Wars"
+SCREEN_TITLE = "KosmicheskieZashitniki"
 
 ENEMY_BASE_SPEED = -1
 BULLET_BASE_SPEED = 5
@@ -539,4 +539,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
