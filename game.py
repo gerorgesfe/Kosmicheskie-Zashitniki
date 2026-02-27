@@ -48,7 +48,7 @@ TEX_WALL = "images/Wall.png"
 TEX_WALL_DESTR = "images/Wall_shoot.png"
 TEX_WALL_PASS = "images/Wall_pass.png"
 
-DB_NAME = "game_data.db"
+DB_NAME = "data/game_data.db"
 
 class DatabaseManager:
     def __init__(self):
