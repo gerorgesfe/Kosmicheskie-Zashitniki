@@ -1,5 +1,3 @@
-import arcade
-
 # 1. Настройки экрана и окна
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
