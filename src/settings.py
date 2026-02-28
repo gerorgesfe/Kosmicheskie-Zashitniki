@@ -1,7 +1,7 @@
 import json
 import os
 
-SETTINGS_FILE = "data/settings.json"
+SETTINGS_FILE = "../data/settings.json"
 
 default_settings = {
     "volume": 0.5

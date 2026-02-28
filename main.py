@@ -1,6 +1,6 @@
 import arcade
 import random
-from settings import load_settings, save_settings
+from src.settings import load_settings, save_settings
 from constants import *
 
 
@@ -130,7 +130,7 @@ class MenuWindow(arcade.Window):
 
     def start_game(self):
         self.close()
-        from game import main
+        from src.game import main
         main()
 
 
