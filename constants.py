@@ -21,6 +21,7 @@ PLAYER_LIVES = 1
 # 4. Система очков и прогрессия сложности
 SCORE_PER_ENEMY = 10
 SCORE_PER_WALL = 20
+SCORE_PER_BOSS = 500
 SPEED_INCREASE_PER_100_SCORE = -0.05
 BULLET_SPEED_INCREASE_PER_100_SCORE = 0.01
 ENEMY_SHOOT_INCREASE_PER_100_SCORE = 2
@@ -35,6 +36,7 @@ COST_TOUGH_ENEMY = 10
 COST_WALL_INDESTR = 3
 COST_WALL_DESTR = 5
 COST_WALL_PASS = 4
+COST_BOSS = 100
 
 # 5. Система волн и бюджет спавна
 COFFICENT_BUDGET = 1
@@ -42,6 +44,7 @@ BASE_WAVE_BUDGET = 15 * COFFICENT_BUDGET
 BUDGET_INCREASE_PER_WAVE = 5
 MAX_WALL_PERCENT = 0.2
 WAVE_COOLDOWN_FRAMES = 120
+BOSS_WAVE_INTERVAL = 5  # каждые 5 волн
 
 # 7. Графические ресурсы (Текстуры)
 TEX_BACKGROUND = "images/space_background.png"
@@ -54,13 +57,35 @@ TEX_TOUGH_ENEMY = "images/x-wing_enemy.png"
 TEX_WALL = "images/Wall.png"
 TEX_WALL_DESTR = "images/Wall_shoot.png"
 TEX_WALL_PASS = "images/Wall_pass.png"
+TEX_BOSS = "images/boss.png"
+TEX_BOSS_HIT = "images/boss_hit.png"
 POWER_CARD = "images/power_card.png"
 SPEED_CARD = "images/speed_.png"
 DAMAGE_CARD = "images/damage_card.png"
 MONEY_CARD = "images/money_.png"
 UNBUG_CARD = "images/Unbug_card.png"
 DEBUG_CARD = "images/debug_card.png"
-BOSS = "images/boss.png"
 
 # 8. Данные и сохранение
 DB_NAME = "data/game_data.db"
+
+# 9. Настройки босса
+BOSS_HEALTH = 50 * COFFICENT_HEALTH
+BOSS_SPEED = 2
+BOSS_SHOOT_INTERVAL = 60
+BOSS_MOVE_INTERVAL = 120
+BOSS_ATTACK_PATTERNS = 3
+BOSS_ROOM_HEIGHT = 800
+
+# 10. Система частиц
+PARTICLE_COUNT = 50
+PARTICLE_LIFETIME = 1.0
+PARTICLE_SPEED = 3
+PARTICLE_SIZE = 4
+EXPLOSION_PARTICLE_COUNT = 30
+BOSS_EXPLOSION_PARTICLE_COUNT = 100
+
+# 11. Физика
+GRAVITY = 0.5
+FRICTION = 0.98
+BOUNCE_FACTOR = 0.7
