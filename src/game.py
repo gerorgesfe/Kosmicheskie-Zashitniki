@@ -3,6 +3,7 @@ import random
 import sqlite3
 import datetime
 import time
+import math
 from constants import *
 
 sqlite3.register_adapter(datetime.datetime, lambda dt: dt.isoformat())
@@ -71,6 +72,64 @@ class Particle:
 
     def is_dead(self):
         return self.lifetime <= 0
+
+
+class ParticleSystem:
+    #  эффекты
+
+    def __init__(self):
+        self.particles = []
+
+    def emit(self, x, y, count, color, size_range=(2, 6),
+             speed_range=(1, 5), lifetime_range=(0.5, 2.0), spread=360):
+        for _ in range(count):
+            angle = random.uniform(0, 2 * math.pi)
+            speed = random.uniform(*speed_range)
+            size = random.uniform(*size_range)
+            lifetime = random.uniform(*lifetime_range)
+
+            speed_x = math.cos(angle) * speed
+            speed_y = math.sin(angle) * speed
+
+            particle = Particle(x, y, color, size, lifetime, speed_x, speed_y)
+            self.particles.append(particle)
+
+    def emit_explosion(self, x, y, color=(255, 200, 50), count=None):
+        if count is None:
+            count = EXPLOSION_PARTICLE_COUNT
+
+        colors = [
+            (255, 200, 50),  # Желтый
+            (255, 100, 0),  # Оранжевый
+            (255, 50, 0),  # Красный
+            (200, 200, 200),  # Белый
+        ]
+
+        for _ in range(count):
+            angle = random.uniform(0, 2 * math.pi)
+            speed = random.uniform(2, 8)
+            size = random.uniform(2, 8)
+            lifetime = random.uniform(0.5, 2.0)
+            color = random.choice(colors)
+
+            speed_x = math.cos(angle) * speed
+            speed_y = math.sin(angle) * speed
+
+            particle = Particle(x, y, color, size, lifetime, speed_x, speed_y)
+            self.particles.append(particle)
+
+    def update(self, delta_time):
+        for particle in self.particles[:]:
+            particle.update(delta_time)
+            if particle.is_dead():
+                self.particles.remove(particle)
+
+    def draw(self):
+        for particle in self.particles:
+            particle.draw()
+
+    def clear(self):
+        self.particles.clear()
 
 
 class WarShip(arcade.Sprite):
