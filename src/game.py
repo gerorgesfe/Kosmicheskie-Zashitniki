@@ -398,6 +398,9 @@ class MyGame(arcade.Window):
 
     def on_draw(self):
         self.clear()
+        # камера
+        self.camera.use()
+
         arcade.draw_sprite(self.background_sprite)
         arcade.draw_sprite(self.player)
         self.bullet_list.draw()
