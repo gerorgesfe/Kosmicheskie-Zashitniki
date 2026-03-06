@@ -44,7 +44,7 @@ BASE_WAVE_BUDGET = 15 * COFFICENT_BUDGET
 BUDGET_INCREASE_PER_WAVE = 5
 MAX_WALL_PERCENT = 0.2
 WAVE_COOLDOWN_FRAMES = 120
-BOSS_WAVE_INTERVAL = 5  # каждые 5 волн
+BOSS_WAVE_INTERVAL = 3 # каждые 3 волны
 
 # 7. Графические ресурсы (Текстуры)
 TEX_BACKGROUND = "images/space_background.png"

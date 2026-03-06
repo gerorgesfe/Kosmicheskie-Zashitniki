@@ -390,6 +390,18 @@ class MyGame(arcade.Window):
 
         self.particle_system = ParticleSystem()
 
+        self.lose_sound = None
+        self.victory_sound = None
+        try:
+            self.lose_sound = arcade.load_sound("sounds/lose.mp3")
+            self.victory_sound = arcade.load_sound("sounds/victory.wav")
+        except:
+            print("Warning: Could not load sound files")
+
+        # ПАУЗА ПОСЛЕ ПОБЕДЫ НАД БОССОМ
+        self.victory_pause = False
+        self.victory_timer = 0
+
     def setup(self):
         self.background_sprite = arcade.Sprite(TEX_BACKGROUND)
         self.background_sprite.center_x = SCREEN_WIDTH / 2
@@ -467,12 +479,21 @@ class MyGame(arcade.Window):
         self.boss = None
         self.boss_room_transition = 60
         self.score += SCORE_PER_BOSS
+        self.enemy_bullet_list.clear()
+
+        self.particle_system.clear()
 
         self.particle_system.emit_explosion(
             SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
             color=(255, 215, 0),
             count=50
         )
+
+        if self.victory_sound:
+            arcade.play_sound(self.victory_sound)
+
+        self.victory_pause = True
+        self.victory_timer = 180
 
     def is_position_free(self, x, y, margin=30):
         for wall in self.wall_list:
@@ -609,11 +630,17 @@ class MyGame(arcade.Window):
                 )
 
     def on_mouse_motion(self, x, y, dx, dy):
-        if not self.game_over_flag and not self.waiting_for_name:
+        if not self.game_over_flag and not self.waiting_for_name and not self.victory_pause:
             self.player.center_x = x
             self.player.center_y = y
 
     def on_key_press(self, key, modifiers):
+        if self.victory_pause:
+            if key == arcade.key.SPACE or key == arcade.key.ENTER:
+                self.victory_pause = False
+                self.start_next_wave()
+            return
+
         if key == arcade.key.ESCAPE and not self.game_over_flag and not self.waiting_for_name:
             self.return_to_menu()
             return
@@ -676,6 +703,21 @@ class MyGame(arcade.Window):
             arcade.draw_text("БОСС!", SCREEN_WIDTH / 2, SCREEN_HEIGHT - 30,
                              arcade.color.RED, 30, anchor_x="center")
 
+        if self.victory_pause:
+            arcade.draw_lrbt_rectangle_filled(
+                0, SCREEN_WIDTH, 0, SCREEN_HEIGHT,
+                (0, 0, 0, 180)
+            )
+
+            arcade.draw_text("ПОБЕДА!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 50,
+                             arcade.color.GOLD, 50, anchor_x="center")
+            arcade.draw_text("Босс повержен!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
+                             arcade.color.WHITE, 24, anchor_x="center")
+            arcade.draw_text("Пробел для продолжения",
+                             SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 60,
+                             arcade.color.GRAY, 18, anchor_x="center")
+            return
+
         if self.game_over_flag:
             arcade.draw_text("ИГРА ОКОНЧЕНА", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
                              arcade.color.RED, 50, anchor_x="center")
@@ -710,7 +752,7 @@ class MyGame(arcade.Window):
                 y -= 25
 
     def on_update(self, delta_time):
-        if self.game_over_flag or self.waiting_for_name:
+        if self.game_over_flag or self.waiting_for_name or self.victory_pause:
             return
 
         if self.in_boss_room and self.boss_room_transition > 0:
@@ -723,7 +765,6 @@ class MyGame(arcade.Window):
             self.camera.zoom = zoom
             if self.boss_room_transition <= 0:
                 self.boss_defeated = False
-                self.start_next_wave()
         else:
             self.camera.zoom = 1.0
 
@@ -840,6 +881,9 @@ class MyGame(arcade.Window):
     def game_over(self):
         self.game_over_flag = True
         self.name_saved = False
+
+        if self.lose_sound:
+            arcade.play_sound(self.lose_sound)
 
         self.particle_system.emit_explosion(
             self.player.center_x, self.player.center_y,
