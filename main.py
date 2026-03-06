@@ -10,10 +10,9 @@ class MenuWindow(arcade.Window):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
         arcade.set_background_color(arcade.color.BLACK)
 
-        self.state = "menu"  # menu / settings
+        self.state = "menu"
         self.settings = load_settings()
 
-        # Звёзды
         self.stars = [
             [random.randint(0, SCREEN_WIDTH),
              random.randint(0, SCREEN_HEIGHT),
@@ -21,12 +20,10 @@ class MenuWindow(arcade.Window):
             for _ in range(120)
         ]
 
-        # Кнопки меню
         self.play_btn = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 60, 240, 60)
         self.settings_btn = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 240, 60)
         self.exit_btn = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 60, 240, 60)
 
-        # Ползунок громкости
         self.slider_x = SCREEN_WIDTH / 2
         self.slider_y = SCREEN_HEIGHT / 2
         self.slider_width = 300
@@ -53,9 +50,9 @@ class MenuWindow(arcade.Window):
                          anchor_x="center", anchor_y="center")
 
     def draw_menu(self):
-        arcade.draw_text("WARSHIP",
+        arcade.draw_text("КОСМИЧЕСКИЕ ЗАЩИТНИКИ",
                          SCREEN_WIDTH / 2, SCREEN_HEIGHT - 120,
-                         arcade.color.SKY_BLUE, 48,
+                         arcade.color.SKY_BLUE, 42,
                          anchor_x="center")
 
         self.draw_button(self.play_btn, "Играть")
@@ -73,17 +70,14 @@ class MenuWindow(arcade.Window):
                          arcade.color.WHITE, 18,
                          anchor_x="center")
 
-        # линия
         left = self.slider_x - self.slider_width / 2
         right = self.slider_x + self.slider_width / 2
         arcade.draw_line(left, self.slider_y, right, self.slider_y,
                          arcade.color.GRAY, 4)
 
-        # позиция ползунка
         knob_x = left + self.settings["volume"] * self.slider_width
         arcade.draw_circle_filled(knob_x, self.slider_y, 10, arcade.color.WHITE)
 
-        # кнопка назад
         self.draw_button((SCREEN_WIDTH / 2, 100, 200, 50), "Назад")
 
     def on_mouse_press(self, x, y, button, modifiers):
@@ -101,12 +95,10 @@ class MenuWindow(arcade.Window):
             left = self.slider_x - self.slider_width / 2
             right = self.slider_x + self.slider_width / 2
 
-            # Проверка нажатия на ползунок
             if abs(y - self.slider_y) < 15 and left <= x <= right:
                 self.dragging = True
                 self.update_volume(x)
 
-            # Назад
             if self.hit((SCREEN_WIDTH / 2, 100, 200, 50), x, y):
                 save_settings(self.settings)
                 self.state = "menu"

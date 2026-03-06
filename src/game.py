@@ -45,7 +45,6 @@ class DatabaseManager:
 
 
 class Particle:
-    # частицы
     def __init__(self, x, y, color, size, lifetime, speed_x, speed_y):
         self.x = x
         self.y = y
@@ -75,8 +74,6 @@ class Particle:
 
 
 class ParticleSystem:
-    #  эффекты
-
     def __init__(self):
         self.particles = []
 
@@ -99,10 +96,10 @@ class ParticleSystem:
             count = EXPLOSION_PARTICLE_COUNT
 
         colors = [
-            (255, 200, 50),  # Желтый
-            (255, 100, 0),  # Оранжевый
-            (255, 50, 0),  # Красный
-            (200, 200, 200),  # Белый
+            (255, 200, 50),
+            (255, 100, 0),
+            (255, 50, 0),
+            (200, 200, 200),
         ]
 
         for _ in range(count):
@@ -133,8 +130,6 @@ class ParticleSystem:
 
 
 class Boss(arcade.Sprite):
-    """Класс босса"""
-
     def __init__(self, game):
         super().__init__(TEX_BOSS, 1.0)
         self.game = game
@@ -153,9 +148,7 @@ class Boss(arcade.Sprite):
         self.hit_timer = 0
 
         try:
-            self.textures = [
-                arcade.load_texture(TEX_BOSS),
-            ]
+            self.textures = [arcade.load_texture(TEX_BOSS)]
         except:
             self.textures = [arcade.load_texture(TEX_BOSS)]
 
@@ -164,19 +157,15 @@ class Boss(arcade.Sprite):
         self.height = 100
 
     def update(self, delta_time):
-        """Обновить босса"""
-        # Анимация
         self.animation_timer += delta_time
         if self.animation_timer > 0.1:
             self.animation_timer = 0
 
-        # Hit эффект
         if self.is_hit:
             self.hit_timer -= delta_time
             if self.hit_timer <= 0:
                 self.is_hit = False
 
-        # Движение
         self.move_timer += delta_time * 60
         if self.move_timer > BOSS_MOVE_INTERVAL:
             self.move_direction *= -1
@@ -184,7 +173,6 @@ class Boss(arcade.Sprite):
 
         self.center_x += self.move_direction * self.speed
 
-        # Ограничение по краям
         if self.center_x < 80:
             self.center_x = 80
             self.move_direction = 1
@@ -192,32 +180,24 @@ class Boss(arcade.Sprite):
             self.center_x = SCREEN_WIDTH - 80
             self.move_direction = -1
 
-        # Стрельба
         self.shoot_timer += 1
         if self.shoot_timer >= self.shoot_interval:
             self.shoot()
             self.shoot_timer = 0
 
-        # Смена паттерна атаки
         if random.random() < 0.01:
             self.attack_pattern = random.randint(0, BOSS_ATTACK_PATTERNS - 1)
 
     def shoot(self):
-        """Босс стреляет"""
         if self.attack_pattern == 0:
-            # Обычный выстрел
             bullet = EnemyBullet(self.center_x, self.bottom, speed=-6)
             self.game.enemy_bullet_list.append(bullet)
-
         elif self.attack_pattern == 1:
-            # Тройной выстрел
             for offset in [-30, 0, 30]:
                 bullet = EnemyBullet(self.center_x + offset, self.bottom, speed=-5)
                 bullet.change_x = offset * 0.05
                 self.game.enemy_bullet_list.append(bullet)
-
         elif self.attack_pattern == 2:
-            # Круговой выстрел
             for i in range(8):
                 angle = (i / 8) * 2 * math.pi + math.pi / 2
                 bullet = EnemyBullet(self.center_x, self.center_y, speed=0)
@@ -226,12 +206,10 @@ class Boss(arcade.Sprite):
                 self.game.enemy_bullet_list.append(bullet)
 
     def hit(self, damage=1):
-        """Получить урон"""
         self.health -= damage
         self.is_hit = True
         self.hit_timer = 0.1
 
-        # Эффект попадания
         if self.game:
             self.game.particle_system.emit_explosion(
                 self.center_x + random.uniform(-40, 40),
@@ -245,7 +223,6 @@ class Boss(arcade.Sprite):
         return False
 
     def draw_health_bar(self):
-        """Нарисовать полоску здоровья"""
         bar_width = 100
         bar_height = 10
         health_percent = self.health / self.max_health
@@ -468,7 +445,6 @@ class MyGame(arcade.Window):
             self.wave_cooldown = 0
 
     def spawn_boss(self):
-        # спавн босса
         self.boss_active = True
         self.boss = Boss(self)
         self.in_boss_room = True
@@ -505,7 +481,6 @@ class MyGame(arcade.Window):
         return True
 
     def is_behind_wall(self, x, y):
-        # Проверяет позиция за стеной или нет
         for wall in self.wall_list:
             if not wall.passable:
                 wall_left = wall.center_x - wall.width / 2
@@ -639,6 +614,10 @@ class MyGame(arcade.Window):
             self.player.center_y = y
 
     def on_key_press(self, key, modifiers):
+        if key == arcade.key.ESCAPE and not self.game_over_flag and not self.waiting_for_name:
+            self.return_to_menu()
+            return
+
         if key == arcade.key.TAB and not self.waiting_for_name:
             self.show_leaderboard = not self.show_leaderboard
             return
@@ -650,7 +629,7 @@ class MyGame(arcade.Window):
 
         if self.waiting_for_name:
             if key == arcade.key.ENTER:
-                name = self.input_name if self.input_name else "Anonymous"
+                name = self.input_name if self.input_name else "Аноним"
                 self.db.add_score(name, self.score)
                 self.waiting_for_name = False
                 self.name_saved = True
@@ -667,9 +646,13 @@ class MyGame(arcade.Window):
         if key == arcade.key.R and self.game_over_flag and not self.waiting_for_name:
             self.setup()
 
+    def return_to_menu(self):
+        self.close()
+        from main import main as menu_main
+        menu_main()
+
     def on_draw(self):
         self.clear()
-        # камера
         self.camera.use()
 
         arcade.draw_sprite(self.background_sprite)
@@ -686,32 +669,38 @@ class MyGame(arcade.Window):
         self.particle_system.draw()
 
         self.camera.use()
-        arcade.draw_text(f"Score: {self.score}", 10, SCREEN_HEIGHT - 30, arcade.color.WHITE, 20)
-        arcade.draw_text(f"Wave: {self.wave_number}", 10, SCREEN_HEIGHT - 60, arcade.color.YELLOW, 20)
+        arcade.draw_text(f"Счёт: {self.score}", 10, SCREEN_HEIGHT - 30, arcade.color.YELLOW, 20)
+        arcade.draw_text(f"Волна: {self.wave_number}", 10, SCREEN_HEIGHT - 60, arcade.color.YELLOW, 20)
 
         if self.boss_active:
-            arcade.draw_text("BOSS FIGHT!", SCREEN_WIDTH / 2, SCREEN_HEIGHT - 30,
+            arcade.draw_text("БОСС!", SCREEN_WIDTH / 2, SCREEN_HEIGHT - 30,
                              arcade.color.RED, 30, anchor_x="center")
 
         if self.game_over_flag:
-            arcade.draw_text("GAME OVER", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
+            arcade.draw_text("ИГРА ОКОНЧЕНА", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
                              arcade.color.RED, 50, anchor_x="center")
             if not self.waiting_for_name and not self.name_saved:
                 arcade.draw_text("Нажмите ENTER для ввода имени, R для рестарта",
                                  SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 50,
                                  arcade.color.WHITE, 16, anchor_x="center")
+                arcade.draw_text("ESC - главное меню",
+                                 SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 80,
+                                 arcade.color.GRAY, 14, anchor_x="center")
             elif self.waiting_for_name:
                 arcade.draw_text("Введите имя:", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 80,
                                  arcade.color.YELLOW, 20, anchor_x="center")
                 arcade.draw_text(self.input_name + "_", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 120,
                                  arcade.color.WHITE, 24, anchor_x="center")
+                arcade.draw_text("esc - назад | ENTER - сохранить",
+                                 SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 160,
+                                 arcade.color.GRAY, 14, anchor_x="center")
 
         if self.show_leaderboard:
             arcade.draw_lrbt_rectangle_filled(
                 200, SCREEN_WIDTH - 200, 150, SCREEN_HEIGHT - 100,
                 (0, 0, 0, 200)
             )
-            arcade.draw_text("ЛИДЕРЫ", SCREEN_WIDTH / 2, SCREEN_HEIGHT - 150,
+            arcade.draw_text("ТАБЛИЦА ЛИДЕРОВ", SCREEN_WIDTH / 2, SCREEN_HEIGHT - 150,
                              arcade.color.GOLD, 28, anchor_x="center")
             scores = self.db.get_top_scores(10)
             y = SCREEN_HEIGHT - 200
