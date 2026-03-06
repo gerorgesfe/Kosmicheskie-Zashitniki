@@ -60,7 +60,7 @@ DAMAGE_CARD = "images/damage_card.png"
 MONEY_CARD = "images/money_.png"
 UNBUG_CARD = "images/Unbug_card.png"
 DEBUG_CARD = "images/debug_card.png"
-BOSS = "images/Boss_1.png"
+BOSS = "images/boss.png"
 
 # 8. Данные и сохранение
 DB_NAME = "data/game_data.db"
