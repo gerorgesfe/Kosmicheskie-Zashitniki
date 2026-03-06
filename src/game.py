@@ -7,6 +7,7 @@ from constants import *
 
 sqlite3.register_adapter(datetime.datetime, lambda dt: dt.isoformat())
 
+
 class DatabaseManager:
     def __init__(self):
         self.conn = sqlite3.connect(DB_NAME)
@@ -42,9 +43,38 @@ class DatabaseManager:
         self.conn.close()
 
 
+class Particle:
+    # частицы
+    def __init__(self, x, y, color, size, lifetime, speed_x, speed_y):
+        self.x = x
+        self.y = y
+        self.color = color
+        self.size = size
+        self.lifetime = lifetime
+        self.max_lifetime = lifetime
+        self.speed_x = speed_x
+        self.speed_y = speed_y
+        self.alpha = 255
+
+    def update(self, delta_time):
+        self.x += self.speed_x
+        self.y += self.speed_y
+        self.lifetime -= delta_time
+        self.alpha = int(255 * (self.lifetime / self.max_lifetime))
+        self.speed_y -= GRAVITY * 0.1
+        self.speed_x *= FRICTION
+        self.speed_y *= FRICTION
+
+    def draw(self):
+        color_with_alpha = (*self.color[:3], self.alpha)
+        arcade.draw_circle_filled(self.x, self.y, self.size, color_with_alpha)
+
+    def is_dead(self):
+        return self.lifetime <= 0
+
 
 class WarShip(arcade.Sprite):
-    def update(self, delta_time: float = 1/60):
+    def update(self, delta_time: float = 1 / 60):
         if self.top > SCREEN_HEIGHT:
             self.top = SCREEN_HEIGHT
         if self.bottom < 0:
@@ -60,7 +90,7 @@ class Bullet(arcade.Sprite):
         super().__init__(TEX_BULLET, 0.8)
         self.change_y = speed
 
-    def update(self, delta_time: float = 1/60):
+    def update(self, delta_time: float = 1 / 60):
         self.center_y += self.change_y
 
 
@@ -71,7 +101,7 @@ class EnemyBullet(arcade.Sprite):
         self.center_y = y
         self.change_y = speed
 
-    def update(self, delta_time: float = 1/60):
+    def update(self, delta_time: float = 1 / 60):
         self.center_y += self.change_y
         if self.top < 0:
             self.remove_from_sprite_lists()
@@ -88,7 +118,7 @@ class Enemy(arcade.Sprite):
         self.change_y = speed
         self.animation_counter = 0
 
-    def update(self, delta_time: float = 1/60):
+    def update(self, delta_time: float = 1 / 60):
         self.center_y += self.change_y
         if self.top < 0:
             self.remove_from_sprite_lists()
@@ -115,7 +145,7 @@ class ToughEnemy(Enemy):
             return True
         return False
 
-    def update(self, delta_time: float = 1/60):
+    def update(self, delta_time: float = 1 / 60):
         self.center_y += self.change_y
         if self.top < 0:
             self.remove_from_sprite_lists()
@@ -138,7 +168,7 @@ class Wall(arcade.Sprite):
         self.max_health = health
         self.change_y = speed
 
-    def update(self, delta_time: float = 1/60):
+    def update(self, delta_time: float = 1 / 60):
         self.center_y += self.change_y
         if self.top < 0:
             self.remove_from_sprite_lists()
@@ -150,6 +180,7 @@ class Wall(arcade.Sprite):
                 self.remove_from_sprite_lists()
                 return True
         return False
+
 
 class MyGame(arcade.Window):
     def __init__(self):
@@ -260,13 +291,16 @@ class MyGame(arcade.Window):
                 if budget >= COST_WALL_INDESTR and wall_cost_spent < wall_budget_limit:
                     wall_type = random.choice(['indestructible', 'destructible', 'passable'])
                     if wall_type == 'indestructible':
-                        wall = Wall(TEX_WALL, destructible=False, passable=False, health=1, speed=self.current_wall_speed)
+                        wall = Wall(TEX_WALL, destructible=False, passable=False, health=1,
+                                    speed=self.current_wall_speed)
                         cost = COST_WALL_INDESTR
                     elif wall_type == 'destructible':
-                        wall = Wall(TEX_WALL_DESTR, destructible=True, passable=False, health=WALL_DESTR_HEALTH, speed=self.current_wall_speed)
+                        wall = Wall(TEX_WALL_DESTR, destructible=True, passable=False, health=WALL_DESTR_HEALTH,
+                                    speed=self.current_wall_speed)
                         cost = COST_WALL_DESTR
                     else:
-                        wall = Wall(TEX_WALL_PASS, destructible=False, passable=True, health=1, speed=self.current_wall_speed)
+                        wall = Wall(TEX_WALL_PASS, destructible=False, passable=True, health=1,
+                                    speed=self.current_wall_speed)
                         cost = COST_WALL_PASS
 
                     x = random.randint(50, SCREEN_WIDTH - 50)
@@ -375,16 +409,16 @@ class MyGame(arcade.Window):
         arcade.draw_text(f"Wave: {self.wave_number}", 10, SCREEN_HEIGHT - 60, arcade.color.YELLOW, 20)
 
         if self.game_over_flag:
-            arcade.draw_text("GAME OVER", SCREEN_WIDTH/2, SCREEN_HEIGHT/2,
+            arcade.draw_text("GAME OVER", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
                              arcade.color.RED, 50, anchor_x="center")
             if not self.waiting_for_name and not self.name_saved:
                 arcade.draw_text("Нажмите ENTER для ввода имени, R для рестарта",
-                                 SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 50,
+                                 SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 50,
                                  arcade.color.WHITE, 16, anchor_x="center")
             elif self.waiting_for_name:
-                arcade.draw_text("Введите имя:", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 80,
+                arcade.draw_text("Введите имя:", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 80,
                                  arcade.color.YELLOW, 20, anchor_x="center")
-                arcade.draw_text(self.input_name + "_", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 120,
+                arcade.draw_text(self.input_name + "_", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 120,
                                  arcade.color.WHITE, 24, anchor_x="center")
 
         if self.show_leaderboard:
@@ -392,12 +426,12 @@ class MyGame(arcade.Window):
                 200, SCREEN_WIDTH - 200, 150, SCREEN_HEIGHT - 100,
                 (0, 0, 0, 200)
             )
-            arcade.draw_text("ЛИДЕРЫ", SCREEN_WIDTH/2, SCREEN_HEIGHT - 150,
+            arcade.draw_text("ЛИДЕРЫ", SCREEN_WIDTH / 2, SCREEN_HEIGHT - 150,
                              arcade.color.GOLD, 28, anchor_x="center")
             scores = self.db.get_top_scores(10)
             y = SCREEN_HEIGHT - 200
             for i, (name, score, date) in enumerate(scores):
-                arcade.draw_text(f"{i+1}. {name} - {score}", SCREEN_WIDTH/2, y,
+                arcade.draw_text(f"{i + 1}. {name} - {score}", SCREEN_WIDTH / 2, y,
                                  arcade.color.WHITE, 18, anchor_x="center")
                 y -= 25
 
@@ -496,5 +530,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()
