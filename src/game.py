@@ -10,6 +10,7 @@ sqlite3.register_adapter(datetime.datetime, lambda dt: dt.isoformat())
 
 
 class DatabaseManager:
+    # работает с базой данных: сохраняет рекорды, загружает таблицу лидеров
     def __init__(self):
         self.conn = sqlite3.connect(DB_NAME)
         self.cursor = self.conn.cursor()
@@ -45,6 +46,7 @@ class DatabaseManager:
 
 
 class Particle:
+    # одна частица для эффектов: летит, исчезает, меняет прозрачность
     def __init__(self, x, y, color, size, lifetime, speed_x, speed_y):
         self.x = x
         self.y = y
@@ -74,6 +76,7 @@ class Particle:
 
 
 class ParticleSystem:
+    # управляет кучей частиц: создаёт взрывы, выстрелы, обновляет и рисует их
     def __init__(self):
         self.particles = []
 
@@ -130,6 +133,7 @@ class ParticleSystem:
 
 
 class Boss(arcade.Sprite):
+    # босс: появляется каждые 5 волн, двигается, стреляет, имеет здоровье и полоску хп
     def __init__(self, game):
         super().__init__(TEX_BOSS, 1.0)
         self.game = game
@@ -239,6 +243,7 @@ class Boss(arcade.Sprite):
 
 
 class WarShip(arcade.Sprite):
+    # корабль игрока: следует за мышкой, не вылетает за границы экрана
     def update(self, delta_time: float = 1 / 60):
         if self.top > SCREEN_HEIGHT:
             self.top = SCREEN_HEIGHT
@@ -251,6 +256,7 @@ class WarShip(arcade.Sprite):
 
 
 class Bullet(arcade.Sprite):
+    # пуля игрока: летит вверх, исчезает за экраном
     def __init__(self, speed):
         super().__init__(TEX_BULLET, 0.8)
         self.change_y = speed
@@ -260,6 +266,7 @@ class Bullet(arcade.Sprite):
 
 
 class EnemyBullet(arcade.Sprite):
+    # пуля врага: летит вниз, исчезает за экраном
     def __init__(self, x, y, speed=-3):
         super().__init__(TEX_ENEMY_BULLET, 0.5)
         self.center_x = x
@@ -275,6 +282,7 @@ class EnemyBullet(arcade.Sprite):
 
 
 class Enemy(arcade.Sprite):
+    # обычный враг: летит вниз, анимируется (мигает), исчезает внизу
     def __init__(self, speed):
         super().__init__()
         self.textures = [
@@ -295,6 +303,7 @@ class Enemy(arcade.Sprite):
 
 
 class ToughEnemy(Enemy):
+    # усиленный враг: как обычный, но имеет здоровье и может стрелять в игрока
     def __init__(self, speed, game, shoot_interval):
         super().__init__(speed)
         self.texture = arcade.load_texture(TEX_TOUGH_ENEMY)
@@ -327,6 +336,7 @@ class ToughEnemy(Enemy):
 
 
 class Wall(arcade.Sprite):
+    # стена: может быть неразрушимой, разрушаемой или проходимой, летит вниз
     def __init__(self, texture_path, destructible=False, passable=False, health=1, speed=0):
         super().__init__(texture_path, 0.5)
         self.destructible = destructible
@@ -350,6 +360,7 @@ class Wall(arcade.Sprite):
 
 
 class MyGame(arcade.Window):
+    # главный класс игры
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
         self.background_sprite = None
