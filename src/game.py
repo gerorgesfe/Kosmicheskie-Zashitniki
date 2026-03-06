@@ -132,6 +132,135 @@ class ParticleSystem:
         self.particles.clear()
 
 
+class Boss(arcade.Sprite):
+    """Класс босса"""
+
+    def __init__(self, game):
+        super().__init__(TEX_BOSS, 1.0)
+        self.game = game
+        self.center_x = SCREEN_WIDTH / 2
+        self.center_y = SCREEN_HEIGHT - 150
+        self.health = BOSS_HEALTH
+        self.max_health = BOSS_HEALTH
+        self.speed = BOSS_SPEED
+        self.shoot_interval = BOSS_SHOOT_INTERVAL
+        self.shoot_timer = 0
+        self.move_timer = 0
+        self.move_direction = 1
+        self.animation_timer = 0
+        self.attack_pattern = 0
+        self.is_hit = False
+        self.hit_timer = 0
+
+        try:
+            self.textures = [
+                arcade.load_texture(TEX_BOSS),
+            ]
+        except:
+            self.textures = [arcade.load_texture(TEX_BOSS)]
+
+        self.texture = self.textures[0]
+        self.width = 120
+        self.height = 100
+
+    def update(self, delta_time):
+        """Обновить босса"""
+        # Анимация
+        self.animation_timer += delta_time
+        if self.animation_timer > 0.1:
+            self.animation_timer = 0
+
+        # Hit эффект
+        if self.is_hit:
+            self.hit_timer -= delta_time
+            if self.hit_timer <= 0:
+                self.is_hit = False
+
+        # Движение
+        self.move_timer += delta_time * 60
+        if self.move_timer > BOSS_MOVE_INTERVAL:
+            self.move_direction *= -1
+            self.move_timer = 0
+
+        self.center_x += self.move_direction * self.speed
+
+        # Ограничение по краям
+        if self.center_x < 80:
+            self.center_x = 80
+            self.move_direction = 1
+        if self.center_x > SCREEN_WIDTH - 80:
+            self.center_x = SCREEN_WIDTH - 80
+            self.move_direction = -1
+
+        # Стрельба
+        self.shoot_timer += 1
+        if self.shoot_timer >= self.shoot_interval:
+            self.shoot()
+            self.shoot_timer = 0
+
+        # Смена паттерна атаки
+        if random.random() < 0.01:
+            self.attack_pattern = random.randint(0, BOSS_ATTACK_PATTERNS - 1)
+
+    def shoot(self):
+        """Босс стреляет"""
+        if self.attack_pattern == 0:
+            # Обычный выстрел
+            bullet = EnemyBullet(self.center_x, self.bottom, speed=-6)
+            self.game.enemy_bullet_list.append(bullet)
+
+        elif self.attack_pattern == 1:
+            # Тройной выстрел
+            for offset in [-30, 0, 30]:
+                bullet = EnemyBullet(self.center_x + offset, self.bottom, speed=-5)
+                bullet.change_x = offset * 0.05
+                self.game.enemy_bullet_list.append(bullet)
+
+        elif self.attack_pattern == 2:
+            # Круговой выстрел
+            for i in range(8):
+                angle = (i / 8) * 2 * math.pi + math.pi / 2
+                bullet = EnemyBullet(self.center_x, self.center_y, speed=0)
+                bullet.change_x = math.cos(angle) * 4
+                bullet.change_y = math.sin(angle) * 4
+                self.game.enemy_bullet_list.append(bullet)
+
+    def hit(self, damage=1):
+        """Получить урон"""
+        self.health -= damage
+        self.is_hit = True
+        self.hit_timer = 0.1
+
+        # Эффект попадания
+        if self.game:
+            self.game.particle_system.emit_explosion(
+                self.center_x + random.uniform(-40, 40),
+                self.center_y + random.uniform(-30, 30),
+                color=(255, 100, 0),
+                count=10
+            )
+
+        if self.health <= 0:
+            return True
+        return False
+
+    def draw_health_bar(self):
+        """Нарисовать полоску здоровья"""
+        bar_width = 100
+        bar_height = 10
+        health_percent = self.health / self.max_health
+
+        arcade.draw_rect_filled(
+            arcade.XYWH(self.center_x, SCREEN_HEIGHT - 30, bar_width, bar_height),
+            arcade.color.RED
+        )
+        arcade.draw_rect_filled(
+            arcade.XYWH(self.center_x - bar_width / 2 + bar_width * health_percent / 2,
+                        SCREEN_HEIGHT - 30, bar_width * health_percent, bar_height),
+            arcade.color.GREEN
+        )
+
+
 class WarShip(arcade.Sprite):
     def update(self, delta_time: float = 1 / 60):
         if self.top > SCREEN_HEIGHT:
@@ -159,10 +288,12 @@ class EnemyBullet(arcade.Sprite):
         self.center_x = x
         self.center_y = y
         self.change_y = speed
+        self.change_x = 0
 
     def update(self, delta_time: float = 1 / 60):
         self.center_y += self.change_y
-        if self.top < 0:
+        self.center_x += self.change_x
+        if self.top < 0 or self.bottom > SCREEN_HEIGHT + 100:
             self.remove_from_sprite_lists()
 
 
@@ -272,6 +403,16 @@ class MyGame(arcade.Window):
         self.input_name = ""
         self.name_saved = False
 
+        self.boss = None
+        self.boss_active = False
+        self.boss_defeated = False
+
+        self.camera = None
+        self.in_boss_room = False
+        self.boss_room_transition = 0
+
+        self.particle_system = ParticleSystem()
+
     def setup(self):
         self.background_sprite = arcade.Sprite(TEX_BACKGROUND)
         self.background_sprite.center_x = SCREEN_WIDTH / 2
@@ -279,7 +420,7 @@ class MyGame(arcade.Window):
 
         self.player = WarShip(TEX_PLAYER, 0.5)
         self.player.center_x = SCREEN_WIDTH / 2
-        self.player.center_y = SCREEN_HEIGHT / 2
+        self.player.center_y = 100
 
         self.bullet_list = arcade.SpriteList()
         self.enemy_bullet_list = arcade.SpriteList()
@@ -300,22 +441,82 @@ class MyGame(arcade.Window):
 
         self.wave_number = 0
         self.wave_cooldown = 0
+
+        self.boss = None
+        self.boss_active = False
+        self.boss_defeated = False
+        self.in_boss_room = False
+        self.boss_room_transition = 0
+
+        self.camera = arcade.Camera2D()
+
+        self.particle_system.clear()
+
         self.start_next_wave()
 
         self.set_mouse_visible(False)
 
     def start_next_wave(self):
         self.wave_number += 1
-        self.wave_budget = BASE_WAVE_BUDGET + (self.wave_number - 1) * BUDGET_INCREASE_PER_WAVE
-        self.spawn_wave()
+
+        if self.wave_number % BOSS_WAVE_INTERVAL == 0:
+            self.spawn_boss()
+        else:
+            self.wave_budget = BASE_WAVE_BUDGET + (self.wave_number - 1) * BUDGET_INCREASE_PER_WAVE
+            self.spawn_wave()
+            self.wave_spawned = True
+            self.wave_cooldown = 0
+
+    def spawn_boss(self):
+        # спавн босса
+        self.boss_active = True
+        self.boss = Boss(self)
+        self.in_boss_room = True
+        self.boss_room_transition = 60
         self.wave_spawned = True
-        self.wave_cooldown = 0
+
+        self.particle_system.emit(
+            SCREEN_WIDTH / 2, SCREEN_HEIGHT - 150,
+            count=BOSS_EXPLOSION_PARTICLE_COUNT,
+            color=(100, 200, 255),
+            size_range=(5, 15),
+            speed_range=(3, 10),
+            lifetime_range=(1.0, 3.0)
+        )
+
+    def exit_boss_room(self):
+        self.in_boss_room = False
+        self.boss_active = False
+        self.boss_defeated = True
+        self.boss = None
+        self.boss_room_transition = 60
+        self.score += SCORE_PER_BOSS
+
+        self.particle_system.emit_explosion(
+            SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
+            color=(255, 215, 0),
+            count=50
+        )
 
     def is_position_free(self, x, y, margin=30):
         for wall in self.wall_list:
             if abs(wall.center_x - x) < margin and abs(wall.center_y - y) < margin:
                 return False
         return True
+
+    def is_behind_wall(self, x, y):
+        # Проверяет позиция за стеной или нет
+        for wall in self.wall_list:
+            if not wall.passable:
+                wall_left = wall.center_x - wall.width / 2
+                wall_right = wall.center_x + wall.width / 2
+                enemy_left = x - 20
+                enemy_right = x + 20
+
+                if (enemy_right > wall_left and enemy_left < wall_right):
+                    if wall.center_y >= y - 50:
+                        return True
+        return False
 
     def spawn_wave(self):
         budget = self.wave_budget
@@ -331,21 +532,23 @@ class MyGame(arcade.Window):
             if r < 0.4 and budget >= COST_NORMAL_ENEMY:
                 x = random.randint(20, SCREEN_WIDTH - 20)
                 y = SCREEN_HEIGHT + random.randint(20, 100)
-                if self.is_position_free(x, y):
+                if self.is_position_free(x, y) and not self.is_behind_wall(x, y):
                     enemy = Enemy(self.current_enemy_speed)
                     enemy.center_x = x
                     enemy.center_y = y
                     self.enemy_list.append(enemy)
                     budget -= COST_NORMAL_ENEMY
+
             elif r < 0.6 and can_spawn_tough and budget >= COST_TOUGH_ENEMY:
                 x = random.randint(20, SCREEN_WIDTH - 20)
                 y = SCREEN_HEIGHT + random.randint(20, 100)
-                if self.is_position_free(x, y):
+                if self.is_position_free(x, y) and not self.is_behind_wall(x, y):
                     enemy = ToughEnemy(self.current_enemy_speed, self, self.current_enemy_shoot_interval)
                     enemy.center_x = x
                     enemy.center_y = y
                     self.enemy_list.append(enemy)
                     budget -= COST_TOUGH_ENEMY
+
             else:
                 if budget >= COST_WALL_INDESTR and wall_cost_spent < wall_budget_limit:
                     wall_type = random.choice(['indestructible', 'destructible', 'passable'])
@@ -374,7 +577,7 @@ class MyGame(arcade.Window):
                         if budget >= COST_NORMAL_ENEMY:
                             x = random.randint(20, SCREEN_WIDTH - 20)
                             y = SCREEN_HEIGHT + random.randint(20, 100)
-                            if self.is_position_free(x, y):
+                            if self.is_position_free(x, y) and not self.is_behind_wall(x, y):
                                 enemy = Enemy(self.current_enemy_speed)
                                 enemy.center_x = x
                                 enemy.center_y = y
@@ -384,7 +587,7 @@ class MyGame(arcade.Window):
                     if budget >= COST_NORMAL_ENEMY:
                         x = random.randint(20, SCREEN_WIDTH - 20)
                         y = SCREEN_HEIGHT + random.randint(20, 100)
-                        if self.is_position_free(x, y):
+                        if self.is_position_free(x, y) and not self.is_behind_wall(x, y):
                             enemy = Enemy(self.current_enemy_speed)
                             enemy.center_x = x
                             enemy.center_y = y
@@ -416,10 +619,19 @@ class MyGame(arcade.Window):
             current_time = time.time()
             if current_time - self.last_shot_time >= SHOT_COOLDOWN:
                 bullet = Bullet(self.current_bullet_speed)
-                bullet.center_x = x
+                bullet.center_x = self.player.center_x
                 bullet.bottom = self.player.top
                 self.bullet_list.append(bullet)
                 self.last_shot_time = current_time
+
+                self.particle_system.emit(
+                    self.player.center_x, self.player.top,
+                    count=5,
+                    color=(100, 200, 255),
+                    size_range=(2, 4),
+                    speed_range=(2, 5),
+                    lifetime_range=(0.2, 0.5)
+                )
 
     def on_mouse_motion(self, x, y, dx, dy):
         if not self.game_over_flag and not self.waiting_for_name:
@@ -467,8 +679,19 @@ class MyGame(arcade.Window):
         self.enemy_list.draw()
         self.wall_list.draw()
 
+        if self.boss:
+            arcade.draw_sprite(self.boss)
+            self.boss.draw_health_bar()
+
+        self.particle_system.draw()
+
+        self.camera.use()
         arcade.draw_text(f"Score: {self.score}", 10, SCREEN_HEIGHT - 30, arcade.color.WHITE, 20)
         arcade.draw_text(f"Wave: {self.wave_number}", 10, SCREEN_HEIGHT - 60, arcade.color.YELLOW, 20)
+
+        if self.boss_active:
+            arcade.draw_text("BOSS FIGHT!", SCREEN_WIDTH / 2, SCREEN_HEIGHT - 30,
+                             arcade.color.RED, 30, anchor_x="center")
 
         if self.game_over_flag:
             arcade.draw_text("GAME OVER", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
@@ -501,15 +724,38 @@ class MyGame(arcade.Window):
         if self.game_over_flag or self.waiting_for_name:
             return
 
+        if self.in_boss_room and self.boss_room_transition > 0:
+            self.boss_room_transition -= 1
+            zoom = 1.0 + (self.boss_room_transition / 60) * 0.5
+            self.camera.zoom = zoom
+        elif self.boss_defeated and self.boss_room_transition > 0:
+            self.boss_room_transition -= 1
+            zoom = 1.0 + (self.boss_room_transition / 60) * 0.5
+            self.camera.zoom = zoom
+            if self.boss_room_transition <= 0:
+                self.boss_defeated = False
+                self.start_next_wave()
+        else:
+            self.camera.zoom = 1.0
+
         self.player.update(delta_time)
         self.bullet_list.update()
         self.enemy_bullet_list.update()
         self.enemy_list.update()
         self.wall_list.update()
 
+        if self.boss:
+            self.boss.update(delta_time)
+
+            if arcade.check_for_collision(self.player, self.boss):
+                self.game_over()
+                return
+
+        self.particle_system.update(delta_time)
+
         self.check_score_progression()
 
-        if self.wave_spawned and len(self.enemy_list) == 0 and len(self.wall_list) == 0:
+        if self.wave_spawned and not self.boss_active and len(self.enemy_list) == 0 and len(self.wall_list) == 0:
             self.wave_spawned = False
             self.wave_cooldown = WAVE_COOLDOWN_FRAMES
 
@@ -539,6 +785,11 @@ class MyGame(arcade.Window):
                     if wall.hit():
                         self.score += SCORE_PER_WALL
                         self.check_score_progression()
+                        self.particle_system.emit_explosion(
+                            wall.center_x, wall.center_y,
+                            color=(150, 150, 150),
+                            count=15
+                        )
                     bullet.remove_from_sprite_lists()
                     break
                 else:
@@ -551,18 +802,39 @@ class MyGame(arcade.Window):
                     bullet.remove_from_sprite_lists()
                     break
 
+            if self.boss and arcade.check_for_collision(bullet, self.boss):
+                if self.boss.hit(bullet.damage if hasattr(bullet, 'damage') else 1):
+                    self.particle_system.emit_explosion(
+                        self.boss.center_x, self.boss.center_y,
+                        color=(255, 100, 0),
+                        count=BOSS_EXPLOSION_PARTICLE_COUNT
+                    )
+                    self.exit_boss_room()
+                bullet.remove_from_sprite_lists()
+                continue
+
             hit_enemies = arcade.check_for_collision_with_list(bullet, self.enemy_list)
             for enemy in hit_enemies:
                 if isinstance(enemy, ToughEnemy):
                     if enemy.hit():
-                        self.score += SCORE_PER_ENEMY
+                        self.score += SCORE_PER_ENEMY * 2
                         self.kill_count += 1
                         self.check_score_progression()
+                        self.particle_system.emit_explosion(
+                            enemy.center_x, enemy.center_y,
+                            color=(255, 100, 0),
+                            count=20
+                        )
                 else:
                     enemy.remove_from_sprite_lists()
                     self.score += SCORE_PER_ENEMY
                     self.kill_count += 1
                     self.check_score_progression()
+                    self.particle_system.emit_explosion(
+                        enemy.center_x, enemy.center_y,
+                        color=(255, 200, 50),
+                        count=15
+                    )
                 bullet.remove_from_sprite_lists()
                 break
 
@@ -579,6 +851,12 @@ class MyGame(arcade.Window):
     def game_over(self):
         self.game_over_flag = True
         self.name_saved = False
+
+        self.particle_system.emit_explosion(
+            self.player.center_x, self.player.center_y,
+            color=(100, 200, 255),
+            count=50
+        )
 
     def close_db(self):
         self.db.close()
