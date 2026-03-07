@@ -59,7 +59,7 @@ TEX_BOSS_HIT = "images/boss_hit.png"
 DB_NAME = "data/game_data.db"
 
 # 9. Настройки босса
-BOSS_HEALTH = 50 * COFFICENT_HEALTH
+BOSS_HEALTH = 50
 BOSS_SPEED = 2
 BOSS_SHOOT_INTERVAL = 60
 BOSS_MOVE_INTERVAL = 120
