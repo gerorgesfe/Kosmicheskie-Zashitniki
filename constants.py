@@ -4,17 +4,13 @@ SCREEN_HEIGHT = 600
 SCREEN_TITLE = "KosmicheskieZashitniki"
 
 # 2. Физика и движение
-COFFICENT_SPEED_ENEMY = 1
-COFFICENT_SPEED_BULLET_PLAYER = 1
-COFFICENT_SPEED_BULLET_ENEMY = 1
-ENEMY_BASE_SPEED = -1 * COFFICENT_SPEED_ENEMY
-BULLET_BASE_SPEED = 5 * COFFICENT_SPEED_BULLET_PLAYER
+ENEMY_BASE_SPEED = -1
+BULLET_BASE_SPEED = 5
 ENEMY_SHOOT_BASE_INTERVAL = 90
-SHOT_COOLDOWN = 0.1 * COFFICENT_SPEED_BULLET_ENEMY
+SHOT_COOLDOWN = 0.1
 
 # 3. Здоровье и характеристики сущностей
-COFFICENT_HEALTH = 1
-TOUGH_ENEMY_HEALTH = 3 * COFFICENT_HEALTH
+TOUGH_ENEMY_HEALTH = 3
 WALL_DESTR_HEALTH = 3
 PLAYER_LIVES = 1
 
@@ -39,8 +35,7 @@ COST_WALL_PASS = 4
 COST_BOSS = 100
 
 # 5. Система волн и бюджет спавна
-COFFICENT_BUDGET = 1
-BASE_WAVE_BUDGET = 15 * COFFICENT_BUDGET
+BASE_WAVE_BUDGET = 15
 BUDGET_INCREASE_PER_WAVE = 5
 MAX_WALL_PERCENT = 0.2
 WAVE_COOLDOWN_FRAMES = 120
@@ -59,12 +54,6 @@ TEX_WALL_DESTR = "images/Wall_shoot.png"
 TEX_WALL_PASS = "images/Wall_pass.png"
 TEX_BOSS = "images/boss.png"
 TEX_BOSS_HIT = "images/boss_hit.png"
-POWER_CARD = "images/power_card.png"
-SPEED_CARD = "images/speed_.png"
-DAMAGE_CARD = "images/damage_card.png"
-MONEY_CARD = "images/money_.png"
-UNBUG_CARD = "images/Unbug_card.png"
-DEBUG_CARD = "images/debug_card.png"
 
 # 8. Данные и сохранение
 DB_NAME = "data/game_data.db"
